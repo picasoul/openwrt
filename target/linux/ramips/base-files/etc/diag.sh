@@ -204,6 +204,12 @@ get_status_led() {
 	gl-mt300n-v2)
 		status_led="$boardname:green:power"
 		;;
+	vixmini)
+		status_led="$boardname:blue:power"
+		;;
+	gl-mt300n-v4)
+		status_led="$boardname:blue:power"
+		;;
 	m4-4M|\
 	m4-8M)
 		status_led="m4:blue:status"

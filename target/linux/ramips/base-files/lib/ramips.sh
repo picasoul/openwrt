@@ -220,6 +220,9 @@ ramips_board_detect() {
 	*"VIXMINI")
 		name="vixmini"
 		;;
+	*"GL-MT300N-V4")
+		name="gl-mt300n-v4"
+		;;
 	*"HC5661")
 		name="hc5661"
 		;;
