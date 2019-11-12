@@ -19,7 +19,7 @@
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
  obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
  obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_nand.o mtk_ecc.o
-+obj-$(CONFIG_MTD_NAND_SPI_NAND)         += spi_nand/
++obj-$(CONFIG_MTD_NAND_SPI_NAND)         += spinand/
  
  nand-objs := nand_base.o nand_bbt.o nand_timings.o nand_ids.o
  nand-objs += nand_amd.o
@@ -35,17 +35,9 @@
 +source "drivers/mtd/nand/spi/controllers/Kconfig"
 --- /dev/null
 +++ b/drivers/mtd/nand/spinand/Makefile
-@@ -0,0 +1,10 @@
-+spinand-objs := generic-spinand-controller.o core.o bbt.o nand_core.o micron.o etron.o gigadevice.o
-+
-+obj-m := spinand.o
-+KDIR := /home/luo/openwrt-gl/build_dir/target-mips_24kc_musl/linux-ath79_nand/linux-4.14.151
-+TOOS_CHAIN=/home/luo/openwrt-gl/staging_dir/toolchain-mips_24kc_gcc-7.4.0_musl/bin/mips-openwrt-linux-
-+
-+all:
-+	make -C $(KDIR) M=$(PWD) modules CROSS_COMPILE=$(TOOS_CHAIN) ARCH=mips
-+clean:
-+	rm -f *.ko *.o *.mod.o *.mod.c *.symvers *.bak *.order *.cmd *.mod
+@@ -0,0 +1 @@
++obj-$(CONFIG_MTD_NAND_SPI_NAND) += generic-spinand-controller.o core.o bbt.o nand_core.o micron.o etron.o gigadevice.o paragon.o
+\ No newline at end of file
 --- /dev/null
 +++ b/drivers/mtd/nand/spinand/bbt.c
 @@ -0,0 +1,79 @@
@@ -389,7 +381,7 @@
 +		op.tx_buf = spinand->buf;
 +		op.n_tx = adjreq.datalen;
 +	}
-+	
++
 +	if (req->ooblen) {
 +		memcpy(spinand->oobbuf + req->ooboffs, req->oobbuf.out,
 +		      req->ooblen);
@@ -397,14 +389,14 @@
 +		adjreq.ooblen = nanddev_per_page_oobsize(nand);
 +		adjreq.ooboffs = 0;
 +		op.n_tx = nanddev_page_size(nand)+adjreq.ooblen;
-+		
++
 +		if (!op.tx_buf) {
 +			printk("oob write \n");
 +			op.tx_buf = spinand->buf;
 +			//column = nanddev_page_size(nand);
 +		}
 +	}
-+	
++
 +	op.addr[0] = column >> 8;
 +	op.addr[1] = column;
 +
@@ -543,7 +535,7 @@
 +	struct nand_device *nand = spinand_to_nand(spinand);
 +	u8 status;
 +	int ret = 0;
-+	
++
 +	spinand_write_enable_op(spinand);
 +	spinand_write_to_cache_op(spinand, req);
 +	spinand_program_op(spinand, req);
@@ -664,7 +656,7 @@
 +	nanddev_offs_to_pos(nand, offs, &pos);
 +	/*bad block mark the first page*/
 +	pos.page=0;
-+	
++
 +	mutex_lock(&spinand->lock);
 +	ret = nanddev_markbad(nand, &pos);
 +	mutex_unlock(&spinand->lock);
@@ -842,7 +834,7 @@
 +}
 +EXPORT_SYMBOL_GPL(devm_spinand_alloc);
 +static int spinand_read(struct mtd_info *mtd, loff_t from, size_t len,size_t *retlen, u_char *buf)
-+{	
++{
 +	int ret;
 +	struct mtd_oob_ops ops = {
 +		.len = len,
@@ -850,7 +842,7 @@
 +	};
 +	ret = mtd->_read_oob(mtd, from, &ops);
 +	*retlen = ops.retlen;
-+	
++
 +	if (unlikely(ret < 0))
 +		return ret;
 +	if (mtd->ecc_strength == 0)
@@ -870,7 +862,7 @@
 +	*retlen = ops.retlen;
 +	return ret;
 +
-+} 
++}
 +
 +int spinand_bbt_create(struct nand_device *nand )
 +{
@@ -898,7 +890,7 @@
 +				nanddev_bbt_set_block_status(nand, entry, NAND_BBT_BLOCK_GOOD);
 +				}
 +		}
-+		
++
 +	}
 +		return 0;
 +
@@ -915,11 +907,11 @@
 +			       GFP_KERNEL);
 +	for(i=0;i<len;i++){
 +		buf[i]=i%16;
-+	}			   
++	}
 +	spinand_write(mtd,to,len,&retlen,buf);
-+	kfree(buf);	
++	kfree(buf);
 +	return 0;
-+}	
++}
 +int erase_test(struct mtd_info *mtd,uint64_t  from,uint64_t len)
 +{
 +	struct erase_info einfo={
@@ -928,10 +920,10 @@
 +		.len=len,
 +		.callback = NULL,
 +	};
-+	
++
 +	spinand_mtd_erase(mtd,&einfo);
 +	return 0;
-+}				 
++}
 +int read_test(struct mtd_info *mtd,loff_t from,size_t len)
 +{
 +	struct nand_device *nand = mtd_to_nanddev(mtd);
@@ -958,7 +950,7 @@
 +			en=8;
 +		}
 +	}
-+	kfree(buf);	
++	kfree(buf);
 +	return 0;
 +}
 +
@@ -1238,7 +1230,7 @@
 +
 +#define to_gen_spinand_controller(c) \
 +	container_of(c, struct gen_spinand_controller, ctrl)
-+	
++
 +/*
 + * gen_spinand_controller_exec_op - to process a command to send to the
 + * SPI NAND by generic SPI bus
@@ -1288,7 +1280,7 @@
 +static struct spinand_controller_ops gen_spinand_controller_ops = {
 +	.exec_op = gen_spinand_controller_exec_op,
 +};
-+extern int read_test(struct mtd_info *mtd,loff_t from,size_t len);	
++extern int read_test(struct mtd_info *mtd,loff_t from,size_t len);
 +extern int erase_test(struct mtd_info *mtd,uint64_t  from,uint64_t len);
 +extern int write_test(struct mtd_info *mtd,loff_t to,size_t len);
 +extern int spinand_bbt_create(struct nand_device *nand );
@@ -1355,7 +1347,7 @@
 +	unsigned int entry=0;
 +	struct nand_pos pos;
 +	for(i=0;i<1024;i++){
-+		
++
 +		erase_test(spinand_to_mtd(spinand),i*0x20000,0x20000);
 +		}*/
 +	//erase_test(spinand_to_mtd(spinand),0x00,0x20000);
@@ -1376,7 +1368,7 @@
 +		return ret;
 +
 +	spinand_cleanup(spinand);
-+	
++
 +	return 0;
 +}
 +
@@ -1544,7 +1536,7 @@
 +		op->n_addr= 2;
 +        op->addr[0] = op->addr[1];
 +        op->addr[1] = op->addr[2];
-+    	op->addr[2] = 0; 
++    	op->addr[2] = 0;
 +	}
 +	op->dummy_bytes = giga_spinand_get_dummy(spinand, op);
 +}
@@ -2697,3 +2689,158 @@
 +
 +
 +#endif /* __LINUX_MTD_SPINAND_H */
+--- /dev/null
++++ b/drivers/mtd/nand/spinand/paragon.c
+@@ -0,0 +1,152 @@
++/*
++ *
++ * Copyright (c) 2016-2017 Micron Technology, Inc.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/device.h>
++#include <linux/kernel.h>
++#include "spinand.h"
++
++#define SPINAND_MFR_PARAGON		0xA1
++#define SPINAND_MFR_XTX			0x0B
++
++struct paragon_spinand_info {
++	char *name;
++	u8 dev_id;
++	struct nand_memory_organization memorg;
++	struct nand_ecc_req eccreq;
++	unsigned int rw_mode;
++};
++
++#define PARAGON_SPI_NAND_INFO(nm, did, mo, er, rwm)			\
++	{								\
++		.name = (nm),						\
++		.dev_id = (did),					\
++		.memorg = mo,						\
++		.eccreq = er,						\
++		.rw_mode = (rwm)					\
++	}
++
++static const struct paragon_spinand_info paragon_spinand_table[] = {
++	PARAGON_SPI_NAND_INFO("PARAGONxxxx", 0xe1,
++			     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
++			     NAND_ECCREQ(8, 512),
++			     SPINAND_RW_COMMON),
++	PARAGON_SPI_NAND_INFO("XT26G01xxxx", 0xf1,
++			     NAND_MEMORG(1, 2048, 128, 64, 1024, 1, 1, 1),
++			     NAND_ECCREQ(8, 512),
++			     SPINAND_RW_COMMON),
++};
++
++static int paragon_spinand_get_dummy(struct spinand_device *spinand,
++				    struct spinand_op *op)
++{
++	u8 opcode = op->cmd;
++
++	switch (opcode) {
++	case SPINAND_CMD_READ_FROM_CACHE_FAST:
++	case SPINAND_CMD_READ_FROM_CACHE:
++	case SPINAND_CMD_READ_FROM_CACHE_X2:
++	case SPINAND_CMD_READ_FROM_CACHE_DUAL_IO:
++	case SPINAND_CMD_READ_FROM_CACHE_X4:
++	case SPINAND_CMD_READ_ID:
++		return 1;
++
++	case SPINAND_CMD_READ_FROM_CACHE_QUAD_IO:
++		return 2;
++
++	default:
++		return 0;
++	}
++}
++
++/**
++ * paragon_spinand_scan_id_table - scan SPI NAND info in id table
++ * @spinand: SPI NAND device structure
++ * @id: point to manufacture id and device id
++ * Description:
++ *   If found in id table, config device with table information.
++ */
++static bool paragon_spinand_scan_id_table(struct spinand_device *spinand,
++					 u8 dev_id)
++{
++	struct mtd_info *mtd = spinand_to_mtd(spinand);
++	struct nand_device *nand = mtd_to_nanddev(mtd);
++	struct paragon_spinand_info *item;
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(paragon_spinand_table); i++) {
++		item = (struct paragon_spinand_info *)paragon_spinand_table + i;
++		if (dev_id != item->dev_id)
++			continue;
++
++		nand->memorg = item->memorg;
++		nand->eccreq = item->eccreq;
++		spinand->rw_mode = item->rw_mode;
++
++		return true;
++	}
++
++	return false;
++}
++
++/**
++ * paragon_spinand_detect - initialize device related part in spinand_device
++ * struct if it is Micron device.
++ * @spinand: SPI NAND device structure
++ */
++static bool paragon_spinand_detect(struct spinand_device *spinand)
++{
++	u8 *id = spinand->id.data;
++
++	/*
++	 * Micron SPI NAND read ID need a dummy byte,
++	 * so the first byte in raw_id is dummy.
++	 */
++	if ( (id[1] != SPINAND_MFR_PARAGON) && (id[1] != SPINAND_MFR_XTX) )
++		return false;
++
++	return paragon_spinand_scan_id_table(spinand, id[2]);
++}
++
++/**
++ * paragon_spinand_prepare_op - Fix address for cache operation.
++ * @spinand: SPI NAND device structure
++ * @op: pointer to spinand_op struct
++ * @page: page address
++ * @column: column address
++ */
++static void paragon_spinand_adjust_cache_op(struct spinand_device *spinand,
++					   const struct nand_page_io_req *req,
++					   struct spinand_op *op)
++{
++	struct nand_device *nand = spinand_to_nand(spinand);
++	unsigned int shift;
++
++	op->n_addr= 2;
++	op->addr[0] = op->addr[1];
++	op->addr[1] = op->addr[2];
++	op->addr[2] = 0;
++	op->dummy_bytes = paragon_spinand_get_dummy(spinand, op);
++}
++
++static const struct spinand_manufacturer_ops paragon_spinand_manuf_ops = {
++	.detect = paragon_spinand_detect,
++	.adjust_cache_op = paragon_spinand_adjust_cache_op,
++};
++
++const struct spinand_manufacturer paragon_spinand_manufacturer = {
++	.id = SPINAND_MFR_PARAGON,
++	.name = "Paragon(XTX)",
++	.ops = &paragon_spinand_manuf_ops,
++};
