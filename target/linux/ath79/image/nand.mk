@@ -19,7 +19,7 @@ define Device/glinet_gl-e750
   KERNEL_SIZE := 2048k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  VID_HDR_OFFSET := 512
+  VID_HDR_OFFSET := 2048
   IMAGES += factory.ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar
   IMAGE/factory.ubi := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
