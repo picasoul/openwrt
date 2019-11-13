@@ -57,7 +57,8 @@
 
 &spi {
 	status = "okay";
-	num-cs = <0>;
+	num-cs = <2>;
+	cs-gpios = <0>, <0>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -92,11 +93,6 @@
 
 		};
 	};
-};
-
-&spi {
-	num-cs = <2>;
-	cs-gpios = <0>, <0>;
 
 	flash@1 {
 		compatible = "spinand,glinet";
@@ -114,18 +110,23 @@
 			};
 		};
 	};
+	
 };
 
 &eth0 {
-        status = "okay";
+	status = "okay";
         mtd-mac-address = <&art 0x0>;
-        phy-handle = <&swphy4>;
+	phy-handle = <&swphy4>;
+	ifname = "eth0";
 };
 
 &eth1 {
         mtd-mac-address = <&art 0x0>;
         mtd-mac-address-increment = <1>;
+	ifname = "eth1";
 };
+
+
 
 &wmac {
 	status = "okay";
