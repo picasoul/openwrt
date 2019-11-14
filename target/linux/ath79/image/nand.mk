@@ -15,7 +15,7 @@ endef
 define Device/glinet_gl-e750
   ATH_SOC := qca9531
   DEVICE_TITLE := GL-E750
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport PCI_SUPPORT
   KERNEL_SIZE := 2048k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
