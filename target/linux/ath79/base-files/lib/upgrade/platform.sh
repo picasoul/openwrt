@@ -3,7 +3,7 @@
 #
 
 PART_NAME=firmware
-REQUIRE_IMAGE_METADATA=1
+REQUIRE_IMAGE_METADATA=0
 
 redboot_fis_do_upgrade() {
 	local append
@@ -40,6 +40,9 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	glinet,gl-e750)
+		nand_do_upgrade "$1"
+		;;
 	jjplus,ja76pf2)
 		redboot_fis_do_upgrade "$1" linux
 		;;
