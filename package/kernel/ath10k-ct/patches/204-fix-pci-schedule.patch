@@ -1,0 +1,22 @@
+--- a/ath10k/pci.c
++++ b/ath10k/pci.c
+@@ -2243,7 +2243,7 @@ static int ath10k_pci_bmi_wait(struct at
+ 			goto out;
+ 		}
+ 
+-		schedule();
++		//schedule();
+ 	}
+ 
+ out:
+--- a/ath10k-4.19/pci.c
++++ b/ath10k-4.19/pci.c
+@@ -2548,7 +2548,7 @@ static int ath10k_pci_bmi_wait(struct at
+ 			goto out;
+ 		}
+ 
+-		schedule();
++		//schedule();
+ 	}
+ 
+ 	ret = -ETIMEDOUT;
