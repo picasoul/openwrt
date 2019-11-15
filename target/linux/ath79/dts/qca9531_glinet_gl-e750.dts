@@ -30,6 +30,17 @@
 		};
 	};
 
+        gpio-export {
+                compatible = "gpio-export";
+                #size-cells = <0>;
+
+                gpio_lte_power {
+                        gpio-export,name = "4G POWER";
+                        gpio-export,output = <1>;
+                        gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+                };
+        };
+
 };
 
 &pcie0 {
@@ -125,8 +136,6 @@
         mtd-mac-address-increment = <1>;
 	ifname = "eth1";
 };
-
-
 
 &wmac {
 	status = "okay";
