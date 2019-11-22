@@ -15,6 +15,10 @@ config HAVE_DOT_CONFIG
 	bool
 	default y
 
+config PCI_SUPPORT
+	bool
+	default y
+
 source "target/Config.in"
 
 source "config/Config-images.in"
