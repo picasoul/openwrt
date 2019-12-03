@@ -51,6 +51,16 @@ menu "GL.iNet packages choice shortcut"
 		select PACKAGE_kmod-nls-utf8
 		select PACKAGE_kmod-nf-nathelper-extra
 		select PACKAGE_libcares
+		select PCI_SUPPORT
+		select CONFIG_NETFILTER_XT_MATCH_U32
+		select CONFIG_NET_SCH_CBQ
+		select CONFIG_NET_CLS
+		select CONFIG_NET_CLS_FLOW
+		select CONFIG_NET_SCH_INGRESS
+		select CONFIG_NET_CLS_U32
+		select CONFIG_NET_SCH_SFQ
+		select CONFIG_NET_SCH_PRIO
+		select CONFIG_NET_SCH_MULTIQ
 		help
 		  Choose basic packages and various Busybox options.
 
@@ -146,3 +156,4 @@ menu "GL.iNet packages choice shortcut"
  		bool "Support rtc"
  		select RTC_SUPPORT
 endmenu
+
